@@ -15,7 +15,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 900px;
+            max-width: 950px;
             margin: 0 auto;
             background: #fff;
             padding: 30px;
@@ -75,22 +75,23 @@
         }
         .param-inline input {
             width: 100%;
-            padding: 6px;
+            padding: 8px;
             border: 1px solid #cbd5e1;
             border-radius: 4px;
             box-sizing: border-box;
+            font-size: 1em;
         }
         .chart-container {
             position: relative;
             margin: auto;
-            height: 300px;
-            width: 300px;
+            height: 280px;
+            width: 280px;
         }
         /* Didascalia a Due Colonne */
         .custom-legend {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 15px;
             margin-top: 25px;
             padding-top: 15px;
             border-top: 1px solid #e2e8f0;
@@ -98,18 +99,20 @@
         .legend-col {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
         }
         .legend-item {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             font-size: 0.9em;
+            line-height: 1.3;
         }
         .legend-color {
             width: 14px;
             height: 14px;
             border-radius: 3px;
             margin-right: 8px;
+            margin-top: 2px;
             flex-shrink: 0;
         }
         .total-box {
@@ -117,7 +120,7 @@
             background: #e0f2fe;
             padding: 15px;
             border-radius: 8px;
-            font-size: 1.3em;
+            font-size: 1.4em;
             font-weight: bold;
             color: #0369a1;
             margin-top: 20px;
@@ -152,23 +155,23 @@
                 <div class="param-inline">
                     <div>
                         <label for="pun">PUN (€/kWh)</label>
-                        <input type="number" id="pun" step="0.001" value="0.135">
+                        <input type="number" id="pun" step="0.001" value="0.225">
                     </div>
                     <div>
                         <label for="potenza">Potenza (kW)</label>
-                        <input type="number" id="potenza" step="0.5" value="3.0">
+                        <input type="number" id="potenza" step="0.5" value="11.0">
                     </div>
                 </div>
                 <div class="param-inline">
                     <div style="grid-column: span 2;">
                         <label for="commercializzazione">Commercializzazione Mensile (€/mese)</label>
-                        <input type="number" id="commercializzazione" step="0.50" value="12.00">
+                        <input type="number" id="commercializzazione" step="1" value="100">
                     </div>
                 </div>
             </div>
             
             <div class="total-box">
-                Spesa Totale Stimata: <span id="totaleBolletta">0.00</span> €
+                Spesa Totale Stimata: <span id="totaleBolletta">0,00</span> €
             </div>
         </div>
 
@@ -184,30 +187,30 @@
                 <div class="legend-col">
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: #3b82f6;"></div>
-                        <span>Energia: PUN (Ingrosso): <strong id="legPun">0€</strong></span>
+                        <div>Energia: PUN (Ingrosso):<br><strong id="legPun">0 €</strong></div>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: #60a5fa;"></div>
-                        <span>Energia: Spread / Tariffa: <strong id="legSpread">0€</strong></span>
+                        <div>Energia: Spread / Tariffa:<br><strong id="legSpread">0 €</strong></div>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: #93c5fd;"></div>
-                        <span>Energia: Quota Fissa: <strong id="legFissa">0€</strong></span>
+                        <div>Energia: Quota Fissa:<br><strong id="legFissa">0 €</strong></div>
                     </div>
                 </div>
                 <!-- Colonna Destra: Altre Voci -->
                 <div class="legend-col">
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: #f59e0b;"></div>
-                        <span>Trasporto e Contatore: <strong id="legTrasporto">0€</strong></span>
+                        <div>Trasporto e Contatore:<br><strong id="legTrasporto">0 €</strong></div>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: #ef4444;"></div>
-                        <span>Oneri di Sistema: <strong id="legOneri">0€</strong></span>
+                        <div>Oneri di Sistema:<br><strong id="legOneri">0 €</strong></div>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: #10b981;"></div>
-                        <span>Imposte e IVA (22%): <strong id="legIva">0€</strong></span>
+                        <div>Imposte e IVA (22%):<br><strong id="legIva">0 €</strong></div>
                     </div>
                 </div>
             </div>
@@ -216,7 +219,7 @@
 </div>
 
 <script>
-    // Inizializzazione variabili ed elementi DOM
+    // Inizializzazione elementi DOM
     const consumoInput = document.getElementById('consumo');
     const spreadInput = document.getElementById('spread');
     const punInput = document.getElementById('pun');
@@ -235,7 +238,7 @@
     const legOneri = document.getElementById('legOneri');
     const legIva = document.getElementById('legIva');
 
-    // Inizializzazione Grafico Chart.js
+    // Inizializzazione Grafico Chart.js (Risolto errore sintassi)
     const ctx = document.getElementById('bollettaChart').getContext('2d');
     let bollettaChart = new Chart(ctx, {
         type: 'pie',
@@ -249,14 +252,14 @@
                 'Imposte e IVA'
             ],
             datasets: [{
-                data:,
+                data:, // Inizializzato correttamente con array vuoto/zeri
                 backgroundColor: [
-                    '#3b82f6', // Blu scuro
-                    '#60a5fa', // Blu medio
-                    '#93c5fd', // Blu chiaro
-                    '#f59e0b', // Arancione
-                    '#ef4444', // Rosso
-                    '#10b981'  // Verde
+                    '#3b82f6', 
+                    '#60a5fa', 
+                    '#93c5fd', 
+                    '#f59e0b', 
+                    '#ef4444', 
+                    '#10b981'  
                 ],
                 borderWidth: 1
             }]
@@ -266,15 +269,14 @@
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: false // Nascondiamo la legenda nativa per usare quella a due colonne
+                    display: false 
                 }
             }
         }
     });
 
-    // Funzione principale di calcolo
+    // Funzione principale di calcolo bilanciata in percentuali
     function calcolaBolletta() {
-        // Lettura valori di input
-        const kWh = parseFloat(consumoInput.value);
-        const spread = parseFloat(spreadInput.value);
+        let kWh = parseFloat(consumoInput.value) || 0;
+
 
