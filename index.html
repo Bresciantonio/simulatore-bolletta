@@ -1,2 +1,265 @@
-# simulatore-bolletta
-Mostra il variare del costo della bolletta al variare di tariffa e kWh consumati
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulatore Dinamico Bolletta Luce</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 25px;
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .header {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .header h1 { margin: 0; color: #1a365d; font-size: 24px; }
+        .header p { margin: 5px 0 0 0; color: #718096; font-size: 14px; }
+        .panel-inputs {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .panel-chart {
+            flex: 1.2;
+            min-width: 350px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .input-group {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #2b6cb0;
+        }
+        .input-group.tariffa { border-left-color: #0b3c5d; }
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+        .input-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .input-values {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .info-locked {
+            font-size: 12px;
+            color: #a0aec0;
+            background: #edf2f7;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        canvas {
+            background: #fff;
+            border-radius: 8px;
+        }
+        .legend {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 15px;
+            font-size: 12px;
+            width: 100%;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Simulatore Dinamico Impatto Bolletta</h1>
+        <p>Visualizza graficamente dove si posiziona realmente il costo energetico</p>
+    </div>
+
+    <!-- PANNELLO CONTROLLI -->
+    <div class="panel-inputs">
+        <div class="input-group">
+            <label for="input-consumo">💡 Consumo Annuale (kWh)</label>
+            <input type="range" id="input-consumo" min="500" max="6000" step="100" value="2700">
+            <div class="input-values">
+                <span>Min: 500</span>
+                <span id="val-consumo" style="color:#2b6cb0; font-size:16px;">2700 kWh</span>
+                <span>Max: 6000</span>
+            </div>
+        </div>
+
+        <div class="input-group tariffa">
+            <label for="input-tariffa">📈 Tariffa / Spread del Venditore (€/kWh)</label>
+            <input type="range" id="input-tariffa" min="0.000" max="0.100" step="0.005" value="0.015">
+            <div class="input-values">
+                <span>0.00 €</span>
+                <span id="val-tariffa" style="color:#0b3c5d; font-size:16px;">0.015 €/kWh</span>
+                <span>0.10 €</span>
+            </div>
+        </div>
+
+        <div class="info-locked">
+            <strong>🔒 Parametri di mercato bloccati (Fissi):</strong><br>
+            • PUN Fisso: 0.135 €/kWh<br>
+            • Potenza Contrat.: 3 kW (Quota fissa incl.)<br>
+            • Commercializzazione Venditore: 144 €/anno
+        </div>
+    </div>
+
+    <!-- PANNELLO GRAFICO -->
+    <div class="panel-chart">
+        <canvas id="bollettaCanvas" width="400" height="400"></canvas>
+        
+        <div class="legend">
+            <div class="legend-item"><div class="legend-color" style="background:#63b3ed;"></div><span>Energia: Quota Fissa</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:#3182ce;"></div><span>Energia: PUN (Ingrosso)</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:#0b3c5d;"></div><span>Energia: Spread / Tariffa</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:#ed8936;"></div><span>Trasporto & Contatore</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:#48bb78;"></div><span>Oneri di Sistema</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:#9f7aea;"></div><span>Imposte e IVA</span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('bollettaCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const DEFAULT_CONSO = 2700;
+    const DEFAULT_SPREAD = 0.015;
+
+    const PUN = 0.135;
+    const PCV_ANNO = 144; 
+    const POTENZA_KW = 3;
+    const TRASP_FISSO = 22.00;
+    const TRASP_POTENZA = 21.00 * POTENZA_KW;
+    const TRASP_VAR = 0.009; 
+    const ONERI_VAR = 0.025; 
+    const ACCISA = 0.0227;
+    const IVA_AL_10 = 0.10;
+
+    function calcolaCosti(consumo, spread) {
+        const e_fissa = PCV_ANNO;
+        const e_pun = consumo * PUN;
+        const e_spread = consumo * spread;
+        
+        const trasporto = TRASP_FISSO + TRASP_POTENZA + (consumo * TRASP_VAR);
+        const oneri = consumo * ONERI_VAR;
+        
+        const imponibile = e_fissa + e_pun + e_spread + trasporto + oneri;
+        const imposte = (consumo * ACCISA) + (imponibile * IVA_AL_10);
+        
+        return {
+            voci: [e_fissa, e_pun, e_spread, trasporto, oneri, imposte],
+            totale: imponibile + imposte
+        };
+    }
+
+    function drawPie(centerX, centerY, voci, totale, raggio, isDefaultGhost) {
+        let startAngle = -Math.PI / 2;
+        const colori = isDefaultGhost 
+            ? ['rgba(99,179,237,0.15)', 'rgba(49,130,206,0.15)', 'rgba(11,60,93,0.15)', 'rgba(237,137,54,0.15)', 'rgba(72,187,120,0.15)', 'rgba(159,122,234,0.15)']
+            : ['#63b3ed', '#3182ce', '#0b3c5d', '#ed8936', '#48bb78', '#9f7aea'];
+
+        voci.forEach((valore, i) => {
+            const fettaAngolo = (valore / totale) * (Math.PI * 2);
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, raggio, startAngle, startAngle + fettaAngolo);
+            ctx.closePath();
+
+            if (isDefaultGhost) {
+                ctx.strokeStyle = 'rgba(113, 128, 150, 0.4)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.fillStyle = colori[i];
+                ctx.fill();
+            } else {
+                ctx.fillStyle = colori[i];
+                ctx.fill();
+                
+                const pct = (valore / totale) * 100;
+                if (pct > 2) {
+                    const middleAngle = startAngle + fettaAngolo / 2;
+                    const textX = centerX + Math.cos(middleAngle) * (raggio * 0.68);
+                    const textY = centerY + Math.sin(middleAngle) * (raggio * 0.68);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(Math.round(pct) + '%', textX, textY);
+                }
+            }
+            startAngle += fettaAngolo;
+        });
+    }
+
+    function aggiornaSimulatore() {
+        const consumo = parseFloat(document.getElementById('input-consumo').value);
+        const spread = parseFloat(document.getElementById('input-tariffa').value);
+
+        document.getElementById('val-consumo').innerText = consumo + " kWh";
+        document.getElementById('val-tariffa').innerText = spread.toFixed(3) + " €/kWh";
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const centroX = canvas.width / 2;
+        const centroY = canvas.height / 2;
+
+        const datiDefault = calcolaCosti(DEFAULT_CONSO, DEFAULT_SPREAD);
+        const raggioBaseGhost = 110; 
+        drawPie(centroX, centroY, datiDefault.voci, datiDefault.totale, raggioBaseGhost, true);
+
+        const datiDinamici = calcolaCosti(consumo, spread);
+        const raggioDinamico = raggioBaseGhost * Math.sqrt(datiDinamici.totale / datiDefault.totale);
+        drawPie(centroX, centroY, datiDinamici.voci, datiDinamici.totale, raggioDinamico, false);
+
+        ctx.fillStyle = '#2d3748';
+        ctx.font = 'bold 15px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText("Spesa Totale", centroX, centroY - 170);
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillText("€ " + datiDinamici.totale.toFixed(2), centroX, centroY - 145);
+    }
+
+    document.getElementById('input-consumo').addEventListener('input', aggiornaSimulatore);
+    document.getElementById('input-tariffa').addEventListener('input', aggiornaSimulatore);
+    aggiornaSimulatore();
+</script>
+
+</body>
+</html>
