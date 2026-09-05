@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulatore Avanzato Bolletta Mensile</title>
+    <title>Simulatore Analitico Bolletta - Scontrino dell'Energia</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -20,7 +20,7 @@
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             padding: 25px;
-            max-width: 1000px;
+            max-width: 1150px;
             width: 100%;
             display: flex;
             flex-wrap: wrap;
@@ -33,9 +33,9 @@
         }
         .header h1 { margin: 0; color: #1a365d; font-size: 24px; }
         .header p { margin: 5px 0 0 0; color: #718096; font-size: 14px; }
-        
+
         .panel-inputs {
-            flex: 1.1;
+            flex: 1;
             min-width: 320px;
             display: flex;
             flex-direction: column;
@@ -43,13 +43,13 @@
         }
         .panel-chart {
             flex: 1.2;
-            min-width: 360px;
+            min-width: 420px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
         }
-        
+
         .input-group {
             background: #f8fafc;
             padding: 12px 15px;
@@ -57,7 +57,7 @@
             border-left: 5px solid #2b6cb0;
         }
         .input-group.tariffa { border-left-color: #0b3c5d; }
-        
+
         .market-params {
             background: #edf2f7;
             padding: 15px;
@@ -65,27 +65,36 @@
             border: 1px solid #cbd5e0;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 12px;
         }
         .market-params h3 {
             grid-column: span 2;
             margin: 0 0 5px 0;
-            font-size: 14px;
+            font-size: 13px;
             color: #2d3748;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+        .market-params .hint {
+            grid-column: span 2;
+            font-size: 11px;
+            color: #718096;
+            margin: -6px 0 4px 0;
         }
         .param-field {
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
+        .param-field.full { grid-column: span 2; }
         .param-field label { font-size: 12px; font-weight: 600; color: #4a5568; }
-        .param-field input {
+        .param-field input[type="number"] {
             padding: 6px;
             border: 1px solid #cbd5e0;
             border-radius: 4px;
             font-weight: bold;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .input-group label {
@@ -106,18 +115,59 @@
             font-weight: 600;
             color: #4a5568;
         }
-        
+
+        /* --- Riquadro totale, FUORI dal canvas, ad alto contrasto --- */
+        .totale-box {
+            width: 100%;
+            max-width: 420px;
+            background: #1a365d;
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 14px 18px;
+            text-align: center;
+            margin-bottom: 14px;
+        }
+        .totale-box .etichetta {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #cbd5e0;
+            margin-bottom: 4px;
+        }
+        .totale-box .valore {
+            font-size: 28px;
+            font-weight: 800;
+            color: #ffffff;
+        }
+        .totale-box .delta {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+            color: #90cdf4;
+        }
+
         canvas {
             background: #fff;
             border-radius: 8px;
+            margin-bottom: 6px;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .area-caption {
+            font-size: 11px;
+            color: #718096;
+            text-align: center;
+            max-width: 420px;
             margin-bottom: 10px;
         }
-        
+
         .legend-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            margin-top: 10px;
+            margin-top: 4px;
             width: 100%;
             border-top: 1px solid #e2e8f0;
             padding-top: 15px;
@@ -146,19 +196,63 @@
             border-radius: 3px;
             flex-shrink: 0;
         }
+        .legend-item .legend-label { flex: 1; }
+        .legend-item .legend-value {
+            font-weight: 700;
+            color: #2d3748;
+        }
+        .legend-ghost {
+            margin-top: 8px;
+            font-size: 11px;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-ghost-swatch {
+            width: 20px;
+            height: 0;
+            border-top: 2px dashed #718096;
+        }
+        .legend-note {
+            grid-column: span 2;
+            font-size: 11px;
+            color: #a0aec0;
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        /* --- Compattazione per smartphone --- */
+        @media (max-width: 480px) {
+            body { padding: 8px; }
+            .container { padding: 12px; gap: 14px; border-radius: 8px; }
+            .header h1 { font-size: 17px; }
+            .header p { font-size: 11px; }
+            .panel-inputs, .panel-chart { min-width: 0; width: 100%; flex: 1 1 100%; }
+            .input-group { padding: 10px 12px; }
+            .input-group label { font-size: 12.5px; }
+            .market-params { grid-template-columns: 1fr; padding: 12px; }
+            .market-params .param-field.full { grid-column: span 1; }
+            .totale-box { padding: 10px 14px; max-width: 100%; margin-bottom: 10px; }
+            .totale-box .valore { font-size: 22px; }
+            .totale-box .delta { font-size: 11px; }
+            .area-caption { font-size: 10px; max-width: 100%; }
+            .legend-container { grid-template-columns: 1fr; gap: 12px; }
+            .legend-note { grid-column: span 1; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>Simulatore Analitico di Spesa Energetica Mensile</h1>
-        <p>Studio dell'impatto dei consumi e dello spread sui macro-componenti della bolletta</p>
+        <h1>Simulatore Analitico - Scontrino dell'Energia</h1>
+        <p>Struttura a "scontrino" (ARERA): quota fissa, quota potenza, quote variabili, imposte</p>
     </div>
 
     <div class="panel-inputs">
         <div class="input-group">
-            <label for="input-consumo">📊 Consumo del Mese (kWh/mese)</label>
+            <label for="input-consumo">📊 Consumo del Periodo (kWh/mese)</label>
             <input type="range" id="input-consumo" min="250" max="5000" step="50" value="1500">
             <div class="input-values">
                 <span>Min: 250</span>
@@ -178,57 +272,79 @@
         </div>
 
         <div class="market-params">
-            <h3>⚙️ Parametri di Mercato Regolabili</h3>
+            <h3>⚙️ Parametri dello Scontrino</h3>
+            <div class="hint">I kWh incidono su Energia, Accise e Trasporto. La Potenza incide su Energia (corrispettivo di capacità), Accise e Trasporto. Quota Fissa e PUN incidono solo sullo spicchio Energia.</div>
+
+            <div class="param-field full">
+                <label for="param-quotafissa">Quota Fissa Mensile Venditore (€/mese)</label>
+                <input type="number" id="param-quotafissa" value="12" step="0.5" min="0" max="50">
+            </div>
+
             <div class="param-field">
-                <label for="param-pun">PUN Medio (€/kWh)</label>
-                <input type="text" id="param-pun" value="0.135">
+                <label for="param-potenza">Potenza Contrattuale (kW)</label>
+                <input type="number" id="param-potenza" value="3" step="0.5" min="1" max="20">
             </div>
             <div class="param-field">
-                <label for="param-potenza">Potenza Impegnata (kW)</label>
-                <input type="text" id="param-potenza" value="15">
-            </div>
-            <div class="param-field" style="grid-column: span 2;">
-                <label for="param-commercializzazione">Commercializzazione Venditore (€/mese)</label>
-                <input type="text" id="param-commercializzazione" value="12">
+                <label for="param-pun">PUN Medio del Periodo (€/kWh)</label>
+                <input type="number" id="param-pun" value="0.18" step="0.005" min="0.01" max="0.50">
             </div>
         </div>
     </div>
 
     <div class="panel-chart">
-        <canvas id="bollettaCanvas" width="420" height="420"></canvas>
-        
+
+        <div class="totale-box">
+            <div class="etichetta">Spesa Mensile Stimata</div>
+            <div class="valore" id="val-totale">€ 0,00</div>
+            <div class="delta" id="val-delta">rispetto allo scenario base</div>
+        </div>
+
+        <canvas id="bollettaCanvas" width="600" height="600"></canvas>
+        <div class="area-caption">L'area del cerchio è proporzionale alla spesa totale mensile: il contorno tratteggiato indica lo scenario di riferimento (base).</div>
+
         <div class="legend-container">
             <div class="legend-column">
                 <div class="legend-title">Componente Energia</div>
                 <div class="legend-item">
                     <div class="legend-color" style="background:#63b3ed;"></div>
-                    <span>Quota Fissa Mensile</span>
+                    <span class="legend-label">Quota Fissa (Commerc. + Trasporto)</span>
+                    <span class="legend-value" id="lv-fissa">€ 0,00</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background:#3182ce;"></div>
-                    <span>Quota PUN (Ingrosso)</span>
+                    <span class="legend-label">Energia: PUN (Ingrosso)</span>
+                    <span class="legend-value" id="lv-pun">€ 0,00</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background:#0b3c5d;"></div>
-                    <span>Quota Spread / Tariffa</span>
+                    <span class="legend-label">Energia: Spread / Tariffa</span>
+                    <span class="legend-value" id="lv-spread">€ 0,00</span>
                 </div>
             </div>
-            
+
             <div class="legend-column">
                 <div class="legend-title">Oneri, Reti e Tasse</div>
                 <div class="legend-item">
                     <div class="legend-color" style="background:#ed8936;"></div>
-                    <span>Trasporto e Gestione Rete</span>
+                    <span class="legend-label">Quota Potenza + Trasporto</span>
+                    <span class="legend-value" id="lv-trasporto">€ 0,00</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background:#48bb78;"></div>
-                    <span>Oneri di Sistema</span>
+                    <span class="legend-label">Oneri di Sistema + Accise</span>
+                    <span class="legend-value" id="lv-oneri">€ 0,00</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background:#9f7aea;"></div>
-                    <span>IVA (22% su voci primarie)</span>
+                    <span class="legend-label">IVA (10% sul subtotale)</span>
+                    <span class="legend-value" id="lv-iva">€ 0,00</span>
+                </div>
+                <div class="legend-ghost">
+                    <div class="legend-ghost-swatch"></div>
+                    <span>Torta tratteggiata = scenario di default (1500 kWh, spread 0,015 €)</span>
                 </div>
             </div>
+            <div class="legend-note">Nel grafico l'ampiezza dei tre spicchi "Energia" è mantenuta in una fascia leggibile (40–65% della torta); gli importi in € qui sopra restano quelli calcolati esattamente.</div>
         </div>
     </div>
 </div>
@@ -237,11 +353,33 @@
     const canvas = document.getElementById('bollettaCanvas');
     const ctx = canvas.getContext('2d');
 
+    // --- Scenario di default (per la torta "ghost" di confronto) ---
     const DEFAULT_CONSO = 1500;
     const DEFAULT_SPREAD = 0.015;
-    const DEFAULT_PUN = 0.135;
-    const DEFAULT_POTENZA = 15;
-    const DEFAULT_COMM = 12;
+    const DEFAULT_PUN = 0.18;
+    const DEFAULT_POTENZA = 3;
+    const DEFAULT_QUOTA_FISSA = 12;
+
+    // --- Costanti strutturali "nascoste" dello scontrino (trasporto/oneri/accise) ---
+    const TRASPORTO_FISSO_MENSILE = 3.00;   // quota fissa trasporto, €/mese (dentro "Energia: Quota Fissa")
+    const TARIFFA_TRASPORTO_KW = 3.00;      // quota potenza -> Trasporto, €/kW/mese
+    const TRASPORTO_KWH = 0.085;            // trasporto variabile -> kWh, €/kWh
+    const ONERI_KWH = 0.063;                // oneri di sistema -> kWh, €/kWh
+    const ACCISA_KWH = 0.030;               // accisa erariale -> kWh, €/kWh
+    const CAPACITA_KW = 1.00;               // corrispettivo di capacità -> Potenza incide su Energia, €/kW/mese
+    const ACCISA_POTENZA_KW = 0.50;         // quota accisa legata alla Potenza, €/kW/mese
+    const IVA_RATE = 0.10;                  // IVA sul subtotale (accise incluse)
+
+    // --- Fascia di leggibilità per il gruppo "Energia" nel grafico a torta ---
+    const ENERGY_SHARE_MIN = 0.40;
+    const ENERGY_SHARE_MAX = 0.65;
+
+    // --- Geometria: raggio proporzionale all'AREA, quindi al costo totale ---
+    // area = pi * r^2  =>  r = R_CAL * sqrt(totale / totaleCAL)
+    // Con questa formula raddoppiare il costo raddoppia l'area del cerchio.
+    const R_CAL = 150;   // raggio (px) assegnato allo scenario di calibrazione (il default)
+    const R_MIN_ABS = 55;
+    const R_MAX_ABS = 270;
 
     function parseLocaleFloat(val) {
         if (val === undefined || val === null) return 0;
@@ -250,31 +388,72 @@
         return isNaN(parsed) ? 0 : parsed;
     }
 
-    function calcolaCostiParametrici(consumo, spread, pun, potenza, commMensile) {
-        const e_fissa = commMensile;
-        const e_pun = consumo * pun;
-        const e_spread = consumo * spread;
-        
-        // Struttura pesi per grandi utenze
-        const trasporto = 15.00 + (potenza * 3.5) + (consumo * 0.095);
-        const oneri = 5.00 + (consumo * 0.082);
-        
-        const sommaSpicchiPrimari = (e_fissa + e_pun + e_spread) + trasporto + oneri;
-        const iva_22 = sommaSpicchiPrimari * 0.22;
-        
+    function formattaEuro(v) {
+        return '€ ' + v.toFixed(2).replace('.', ',');
+    }
+
+    // Struttura a "scontrino dell'energia": fissa + potenza + variabili (energia+trasporto+oneri) + imposte
+    // Dipendenze verificate:
+    //  - Quota Fissa Mensile e PUN incidono SOLO sullo spicchio Energia
+    //  - kWh (consumo) incide su Energia, Accise e Trasporto
+    //  - Potenza (kW) incide su Energia (corrispettivo di capacità), Accise e Trasporto
+    function calcolaScontrino(consumo, spread, pun, potenza, quotaFissaMensile) {
+        const e_fissa = quotaFissaMensile + TRASPORTO_FISSO_MENSILE;              // 1. base fissa (commerc. + trasporto) -> Energia
+        const e_pun = consumo * pun + potenza * CAPACITA_KW;                       // 2. Energia - PUN + capacità (kWh, kW)
+        const e_spread = consumo * spread;                                         // 3. Energia - spread (solo kWh)
+
+        const quotaPotenza = potenza * TARIFFA_TRASPORTO_KW;                       // Trasporto - quota potenza (kW)
+        const trasportoVar = consumo * TRASPORTO_KWH;                              // Trasporto - variabile (kWh)
+        const trasportoTotale = quotaPotenza + trasportoVar;
+
+        const oneriVar = consumo * ONERI_KWH + consumo * ACCISA_KWH + potenza * ACCISA_POTENZA_KW; // Oneri + Accise (kWh e kW)
+
+        const subtotale = e_fissa + e_pun + e_spread + trasportoTotale + oneriVar;
+        const iva = subtotale * IVA_RATE;                                          // 4. imposte e IVA al 10%
+
         return {
-            voci: [e_fissa, e_pun, e_spread, trasporto, oneri, iva_22],
-            totale: (sommaSpicchiPrimari + iva_22)
+            voci: [e_fissa, e_pun, e_spread, trasportoTotale, oneriVar, iva],
+            totale: subtotale + iva
         };
     }
 
-    function drawPie(centerX, centerY, voci, totale, raggio, isDefaultGhost) {
-        let startAngle = -Math.PI / 2;
-        const colori = isDefaultGhost 
-            ? ['rgba(99,179,237,0.15)', 'rgba(49,130,206,0.15)', 'rgba(11,60,93,0.15)', 'rgba(237,137,54,0.15)', 'rgba(72,187,120,0.15)', 'rgba(159,122,234,0.15)']
-            : ['#63b3ed', '#3182ce', '#0b3c5d', '#ed8936', '#48bb78', '#9f7aea'];
+    // Il totale di calibrazione è lo scenario di default: gli è assegnato il raggio R_CAL.
+    const CALIBRAZIONE = calcolaScontrino(DEFAULT_CONSO, DEFAULT_SPREAD, DEFAULT_PUN, DEFAULT_POTENZA, DEFAULT_QUOTA_FISSA);
+    const TOTALE_CAL = CALIBRAZIONE.totale;
 
-        voci.forEach((valore, i) => {
+    function calcolaRaggioAreaProporzionale(totale) {
+        const r = R_CAL * Math.sqrt(Math.max(0, totale) / TOTALE_CAL);
+        return Math.min(R_MAX_ABS, Math.max(R_MIN_ABS, r));
+    }
+
+    // Comprime la quota "Energia" (fissa+PUN+spread) in una fascia leggibile 40-65%
+    // della torta, ridistribuendo il resto proporzionalmente. Serve SOLO per gli
+    // angoli delle fette: gli importi in € restano quelli reali (voci originali).
+    function normalizzaVociPerVisualizzazione(voci) {
+        const energyRaw = voci[0] + voci[1] + voci[2];
+        const restRaw = voci[3] + voci[4] + voci[5];
+        const totaleRaw = energyRaw + restRaw;
+        if (totaleRaw <= 0) return voci.slice();
+
+        const energyFracRaw = energyRaw / totaleRaw;
+        const energyFrac = Math.min(ENERGY_SHARE_MAX, Math.max(ENERGY_SHARE_MIN, energyFracRaw));
+        const restFrac = 1 - energyFrac;
+
+        const energyVisual = [voci[0], voci[1], voci[2]].map(v =>
+            energyRaw > 0 ? (v / energyRaw) * energyFrac * totaleRaw : 0
+        );
+        const restVisual = [voci[3], voci[4], voci[5]].map(v =>
+            restRaw > 0 ? (v / restRaw) * restFrac * totaleRaw : 0
+        );
+
+        return [...energyVisual, ...restVisual];
+    }
+
+    function drawPieFilled(centerX, centerY, vociVisual, totale, raggio) {
+        let startAngle = -Math.PI / 2;
+        const colori = ['#63b3ed', '#3182ce', '#0b3c5d', '#ed8936', '#48bb78', '#9f7aea'];
+
+        vociVisual.forEach((valore, i) => {
             const fettaAngolo = totale > 0 ? (valore / totale) * (Math.PI * 2) : 0;
             if (fettaAngolo <= 0) return;
 
@@ -282,12 +461,110 @@
             ctx.moveTo(centerX, centerY);
             ctx.arc(centerX, centerY, raggio, startAngle, startAngle + fettaAngolo);
             ctx.closePath();
+            ctx.fillStyle = colori[i];
+            ctx.fill();
 
-            if (isDefaultGhost) {
-                ctx.strokeStyle = 'rgba(113, 128, 150, 0.3)';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-                ctx.fillStyle = colori[i];
-                ctx.fill();
-            } else {
+            const percentuale = (valore / totale) * 100;
+            if (percentuale >= 2.5) {
+                const midAngle = startAngle + fettaAngolo / 2;
+                const labelX = centerX + Math.cos(midAngle) * (raggio * 0.65);
+                const labelY = centerY + Math.sin(midAngle) * (raggio * 0.65);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px Segoe UI';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(percentuale.toFixed(0) + '%', labelX, labelY);
+            }
 
+            startAngle += fettaAngolo;
+        });
+    }
+
+    // Torta di default: solo contorno tratteggiato e trasparente, sempre visibile sopra i colori
+    function drawPieGhostOutline(centerX, centerY, vociVisual, totale, raggio) {
+        ctx.save();
+        ctx.setLineDash([6, 5]);
+        ctx.strokeStyle = 'rgba(45, 55, 72, 0.6)';
+        ctx.lineWidth = 1.5;
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, raggio, 0, Math.PI * 2);
+        ctx.stroke();
+
+        let startAngle = -Math.PI / 2;
+        vociVisual.forEach((valore) => {
+            const fettaAngolo = totale > 0 ? (valore / totale) * (Math.PI * 2) : 0;
+            if (fettaAngolo <= 0) return;
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + Math.cos(startAngle) * raggio, centerY + Math.sin(startAngle) * raggio);
+            ctx.stroke();
+
+            startAngle += fettaAngolo;
+        });
+        ctx.restore();
+    }
+
+    function aggiornaLegenda(voci, totale) {
+        document.getElementById('lv-fissa').textContent = formattaEuro(voci[0]);
+        document.getElementById('lv-pun').textContent = formattaEuro(voci[1]);
+        document.getElementById('lv-spread').textContent = formattaEuro(voci[2]);
+        document.getElementById('lv-trasporto').textContent = formattaEuro(voci[3]);
+        document.getElementById('lv-oneri').textContent = formattaEuro(voci[4]);
+        document.getElementById('lv-iva').textContent = formattaEuro(voci[5]);
+
+        document.getElementById('val-totale').textContent = formattaEuro(totale);
+
+        const delta = ((totale - TOTALE_CAL) / TOTALE_CAL) * 100;
+        const segno = delta >= 0 ? '+' : '';
+        document.getElementById('val-delta').textContent =
+            segno + delta.toFixed(1) + '% rispetto allo scenario base (' + formattaEuro(TOTALE_CAL) + ')';
+    }
+
+    function disegnaGrafico() {
+        const consumo = parseFloat(document.getElementById('input-consumo').value);
+        const spread = parseFloat(document.getElementById('input-tariffa').value);
+        const pun = parseLocaleFloat(document.getElementById('param-pun').value);
+        const potenza = parseLocaleFloat(document.getElementById('param-potenza').value);
+        const quotaFissaMensile = parseLocaleFloat(document.getElementById('param-quotafissa').value);
+
+        document.getElementById('val-consumo').textContent = consumo + ' kWh';
+        document.getElementById('val-tariffa').textContent = spread.toFixed(3) + ' €/kWh';
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. Torta corrente: raggio proporzionale all'AREA = al costo reale (non normalizzato)
+        const risultatoCorrente = calcolaScontrino(consumo, spread, pun, potenza, quotaFissaMensile);
+        const vociVisualCorrente = normalizzaVociPerVisualizzazione(risultatoCorrente.voci);
+        const raggioCorrente = calcolaRaggioAreaProporzionale(risultatoCorrente.totale);
+        drawPieFilled(centerX, centerY, vociVisualCorrente, risultatoCorrente.totale, raggioCorrente);
+
+        // 2. Torta di default: stesso principio, raggio = R_CAL (scenario di calibrazione)
+        const vociVisualDefault = normalizzaVociPerVisualizzazione(CALIBRAZIONE.voci);
+        const raggioDefault = calcolaRaggioAreaProporzionale(TOTALE_CAL); // = R_CAL
+        drawPieGhostOutline(centerX, centerY, vociVisualDefault, TOTALE_CAL, raggioDefault);
+
+        // Testo e importi FUORI dal canvas (riquadro ad alto contrasto + legenda)
+        aggiornaLegenda(risultatoCorrente.voci, risultatoCorrente.totale);
+    }
+
+    const tuttiGliInput = [
+        'input-consumo',
+        'input-tariffa',
+        'param-pun',
+        'param-potenza',
+        'param-quotafissa'
+    ];
+
+    tuttiGliInput.forEach(id => {
+        document.getElementById(id).addEventListener('input', disegnaGrafico);
+    });
+
+    disegnaGrafico();
+</script>
+</body>
+</html>
