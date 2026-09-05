@@ -243,10 +243,9 @@
     const DEFAULT_POTENZA = 15;
     const DEFAULT_COMM = 12;
 
-    // Funzione di pulizia per gestire le virgole europee trasformandole in punti
     function parseLocaleFloat(val) {
-        if (!val) return 0;
-        let stringVal = val.toString().replace(',', '.');
+        if (val === undefined || val === null) return 0;
+        let stringVal = val.toString().replace(',', '.').trim();
         let parsed = parseFloat(stringVal);
         return isNaN(parsed) ? 0 : parsed;
     }
@@ -264,7 +263,7 @@
         
         return {
             voci: [e_fissa, e_pun, e_spread, trasporto, oneri, iva_22],
-            totale: sommaSpicchiPrimari + iva_22;
+            totale: (sommaSpicchiPrimari + iva_22)
         };
     }
 
@@ -290,3 +289,5 @@
                 ctx.fillStyle = colori[i];
                 ctx.fill();
             } else {
+                ctx.fillStyle = colori[i];
+                ctx.fill();
