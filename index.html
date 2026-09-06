@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulatore Analitico Bolletta - Scontrino dell'Energia</title>
+    <title>Simulatore - Scontrino dell'Energia</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -57,6 +57,49 @@
             border-left: 5px solid #2b6cb0;
         }
         .input-group.tariffa { border-left-color: #0b3c5d; }
+
+        /* --- Toggle Domestico / Business --- */
+        .uso-toggle {
+            background: #f8fafc;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border-left: 5px solid #6b46c1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .uso-toggle .uso-label {
+            font-weight: bold;
+            font-size: 13px;
+            color: #2d3748;
+        }
+        .uso-switch {
+            display: flex;
+            border: 1px solid #cbd5e0;
+            border-radius: 20px;
+            overflow: hidden;
+            font-size: 12px;
+        }
+        .uso-switch input { display: none; }
+        .uso-switch label {
+            padding: 6px 14px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #4a5568;
+            background: #edf2f7;
+            transition: background 0.15s, color 0.15s;
+        }
+        .uso-switch input:checked + label {
+            background: #6b46c1;
+            color: #ffffff;
+        }
+        .uso-hint {
+            width: 100%;
+            font-size: 11px;
+            color: #718096;
+            margin-top: 4px;
+        }
 
         .market-params {
             background: #edf2f7;
@@ -115,6 +158,43 @@
             font-weight: 600;
             color: #4a5568;
         }
+
+        .valore-esatto-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #cbd5e0;
+        }
+        .valore-esatto-row label {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #718096;
+            margin-bottom: 0;
+        }
+        .valore-esatto-row input[type="number"] {
+            width: 110px;
+            padding: 5px 7px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .btn-scenario-base {
+            width: 100%;
+            padding: 9px;
+            border: none;
+            border-radius: 6px;
+            background: #48bb78;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-scenario-base:hover { background: #38a169; }
 
         /* --- Riquadro totale, FUORI dal canvas, ad alto contrasto --- */
         .totale-box {
@@ -222,6 +302,80 @@
             font-style: italic;
         }
 
+        /* --- Pannello "Cosa incide davvero": leva tariffaria vs leva di consumo/potenza --- */
+        .impatto-panel {
+            width: 100%;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 18px;
+            padding-top: 18px;
+        }
+        .impatto-title {
+            font-weight: bold;
+            font-size: 13px;
+            color: #2d3748;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .impatto-sub {
+            font-size: 11.5px;
+            color: #718096;
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+        .impatto-riga {
+            margin-bottom: 12px;
+        }
+        .impatto-riga-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 12.5px;
+            margin-bottom: 4px;
+        }
+        .impatto-riga-header .nome-leva {
+            font-weight: 700;
+            color: #2d3748;
+        }
+        .impatto-riga-header .valore-leva {
+            font-weight: 800;
+            font-size: 14px;
+        }
+        .impatto-track {
+            background: #edf2f7;
+            border-radius: 6px;
+            height: 20px;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        .impatto-bar {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.25s ease;
+        }
+        .impatto-riga-footer {
+            font-size: 10.5px;
+            color: #a0aec0;
+            margin-top: 3px;
+        }
+        .impatto-conclusione {
+            margin-top: 14px;
+            background: #f0fff4;
+            border-left: 4px solid #48bb78;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 12px;
+            color: #276749;
+            line-height: 1.5;
+        }
+        .impatto-nota-limite {
+            margin-top: 8px;
+            font-size: 10.5px;
+            color: #a0aec0;
+            font-style: italic;
+        }
+
         /* --- Compattazione per smartphone --- */
         @media (max-width: 480px) {
             body { padding: 8px; }
@@ -239,6 +393,7 @@
             .area-caption { font-size: 10px; max-width: 100%; }
             .legend-container { grid-template-columns: 1fr; gap: 12px; }
             .legend-note { grid-column: span 1; }
+            .uso-toggle { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
@@ -246,28 +401,47 @@
 
 <div class="container">
     <div class="header">
-        <h1>Simulatore Analitico - Scontrino dell'Energia</h1>
-        <p>Struttura a "scontrino" (ARERA): quota fissa, quota potenza, quote variabili, imposte</p>
+        <h1>Simulatore - Scontrino dell'Energia</h1>
     </div>
 
     <div class="panel-inputs">
+
+        <div class="uso-toggle">
+            <span class="uso-label">Aliquota IVA applicata</span>
+            <div class="uso-switch">
+                <input type="radio" name="uso" id="uso-domestico" value="domestico">
+                <label for="uso-domestico">10%</label>
+                <input type="radio" name="uso" id="uso-business" value="business" checked>
+                <label for="uso-business">22%</label>
+            </div>
+            <div class="uso-hint">Il 10% è l'aliquota agevolata, il 22% quella ordinaria: la scelta non dipende in modo automatico dal tipo di cliente. In generale l'uso domestico rientra nel 10% e le forniture non domestiche nel 22%, ma esistono eccezioni previste dalla norma (es. alcune attività agricole, manifatturiere o energivore) che possono avere il 10% anche fuori dall'uso domestico.</div>
+        </div>
+
         <div class="input-group">
             <label for="input-consumo">📊 Consumo del Periodo (kWh/mese)</label>
-            <input type="range" id="input-consumo" min="250" max="5000" step="50" value="1500">
+            <input type="range" id="input-consumo" min="500" max="50000" step="500" value="10000">
             <div class="input-values">
-                <span>Min: 250</span>
-                <span id="val-consumo" style="color:#2b6cb0; font-size:16px;">1500 kWh</span>
-                <span>Max: 5000</span>
+                <span>Min: 500</span>
+                <span id="val-consumo" style="color:#2b6cb0; font-size:16px;">10000 kWh</span>
+                <span>Max: 50000</span>
+            </div>
+            <div class="valore-esatto-row">
+                <label for="input-consumo-esatto">Valore esatto (kWh/mese)</label>
+                <input type="number" id="input-consumo-esatto" min="500" max="50000" step="1" value="10000">
             </div>
         </div>
 
         <div class="input-group tariffa">
             <label for="input-tariffa">📈 Tariffa / Spread del Venditore (€/kWh)</label>
-            <input type="range" id="input-tariffa" min="0.000" max="0.050" step="0.002" value="0.015">
+            <input type="range" id="input-tariffa" min="0.000" max="0.040" step="0.002" value="0.015">
             <div class="input-values">
                 <span>0.000 €</span>
                 <span id="val-tariffa" style="color:#0b3c5d; font-size:16px;">0.015 €/kWh</span>
-                <span>0.050 €</span>
+                <span>0.040 €</span>
+            </div>
+            <div class="valore-esatto-row">
+                <label for="input-tariffa-esatto">Valore esatto (€/kWh)</label>
+                <input type="number" id="input-tariffa-esatto" min="0" max="0.040" step="0.0001" value="0.015">
             </div>
         </div>
 
@@ -277,17 +451,23 @@
 
             <div class="param-field full">
                 <label for="param-quotafissa">Quota Fissa Mensile Venditore (€/mese)</label>
-                <input type="number" id="param-quotafissa" value="12" step="0.5" min="0" max="50">
+                <input type="number" id="param-quotafissa" value="20" step="0.5" min="0" max="100">
             </div>
 
             <div class="param-field">
-                <label for="param-potenza">Potenza Contrattuale (kW)</label>
-                <input type="number" id="param-potenza" value="3" step="0.5" min="1" max="20">
+                <label for="param-potenza">Potenza Contrattuale BT (kW)</label>
+                <input type="number" id="param-potenza" value="30" step="1" min="6" max="100">
             </div>
             <div class="param-field">
                 <label for="param-pun">PUN Medio del Periodo (€/kWh)</label>
-                <input type="number" id="param-pun" value="0.18" step="0.005" min="0.01" max="0.50">
+                <input type="number" id="param-pun" value="0.13" step="0.005" min="0.01" max="0.50">
             </div>
+        </div>
+
+        <div class="input-group" style="border-left-color:#48bb78;">
+            <label style="margin-bottom:8px;">📌 Scenario di riferimento (torta tratteggiata)</label>
+            <div style="font-size:11.5px; color:#718096; margin-bottom:8px; line-height:1.4; font-weight:normal;">Imposta i valori esatti sopra (consumo, tariffa, potenza, PUN, quota fissa) come bolletta reale di riferimento, poi confronta ogni simulazione successiva con questo scenario.</div>
+            <button id="btn-imposta-base" type="button" class="btn-scenario-base">Imposta come scenario base</button>
         </div>
     </div>
 
@@ -336,15 +516,52 @@
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background:#9f7aea;"></div>
-                    <span class="legend-label">IVA (10% sul subtotale)</span>
+                    <span class="legend-label" id="lv-iva-label">IVA (22% sul subtotale)</span>
                     <span class="legend-value" id="lv-iva">€ 0,00</span>
                 </div>
                 <div class="legend-ghost">
                     <div class="legend-ghost-swatch"></div>
-                    <span>Torta tratteggiata = scenario di default (1500 kWh, spread 0,015 €)</span>
+                    <span>Torta tratteggiata = scenario di default</span>
                 </div>
             </div>
             <div class="legend-note">Nel grafico l'ampiezza dei tre spicchi "Energia" è mantenuta in una fascia leggibile (40–65% della torta); gli importi in € qui sopra restano quelli calcolati esattamente.</div>
+        </div>
+
+        <div class="impatto-panel">
+            <div class="impatto-title">Cosa incide davvero sulla bolletta?</div>
+            <div class="impatto-sub">Escursione di costo mensile ottenibile muovendo ciascuna leva da sola sull'intero range disponibile, a parità delle altre condizioni.</div>
+
+            <div class="impatto-riga">
+                <div class="impatto-riga-header">
+                    <span class="nome-leva">Negoziazione tariffa (spread venditore)</span>
+                    <span class="valore-leva" id="imp-tariffa-val" style="color:#0b3c5d;">€ 0,00</span>
+                </div>
+                <div class="impatto-track"><div class="impatto-bar" id="imp-tariffa-bar" style="background:#0b3c5d; width:0%;"></div></div>
+                <div class="impatto-riga-footer">Effetto dello spread commerciale tra 0,000 e 0,040 €/kWh</div>
+            </div>
+
+            <div class="impatto-riga">
+                <div class="impatto-riga-header">
+                    <span class="nome-leva">Gestione dei consumi (kWh)</span>
+                    <span class="valore-leva" id="imp-consumo-val" style="color:#48bb78;">€ 0,00</span>
+                </div>
+                <div class="impatto-track"><div class="impatto-bar" id="imp-consumo-bar" style="background:#48bb78; width:0%;"></div></div>
+                <div class="impatto-riga-footer">Effetto del volume di consumo tra 500 e 50.000 kWh/mese</div>
+            </div>
+
+            <div class="impatto-riga">
+                <div class="impatto-riga-header">
+                    <span class="nome-leva">Scelta della potenza impegnata (kW)</span>
+                    <span class="valore-leva" id="imp-potenza-val" style="color:#ed8936;">€ 0,00</span>
+                </div>
+                <div class="impatto-track"><div class="impatto-bar" id="imp-potenza-bar" style="background:#ed8936; width:0%;"></div></div>
+                <div class="impatto-riga-footer">Effetto della potenza contrattuale tra 6 e 100 kW BT</div>
+            </div>
+
+            <div class="impatto-conclusione" id="impatto-conclusione">
+                A parità di altre condizioni, la leva di consumo/potenza pesa più della negoziazione tariffaria sul totale in bolletta.
+            </div>
+            <div class="impatto-nota-limite">Il confronto non include l'effetto del costo orario/quartorario dell'energia (spostamento dei consumi nelle fasce più economiche), che nella pratica amplifica ulteriormente il peso della corretta gestione dei consumi rispetto alla sola trattativa sul prezzo.</div>
         </div>
     </div>
 </div>
@@ -353,31 +570,35 @@
     const canvas = document.getElementById('bollettaCanvas');
     const ctx = canvas.getContext('2d');
 
+    // --- Range correnti degli slider/parametri (calibrati su clientela PMI) ---
+    const RANGE_CONSUMO = { min: 500, max: 50000 };
+    const RANGE_TARIFFA = { min: 0.000, max: 0.040 };
+    const RANGE_POTENZA = { min: 6, max: 100 };
+
     // --- Scenario di default (per la torta "ghost" di confronto) ---
-    const DEFAULT_CONSO = 1500;
+    const DEFAULT_CONSO = 10000;
     const DEFAULT_SPREAD = 0.015;
-    const DEFAULT_PUN = 0.18;
-    const DEFAULT_POTENZA = 3;
-    const DEFAULT_QUOTA_FISSA = 12;
+    const DEFAULT_PUN = 0.13;
+    const DEFAULT_POTENZA = 30;
+    const DEFAULT_QUOTA_FISSA = 20;
 
     // --- Costanti strutturali "nascoste" dello scontrino (trasporto/oneri/accise) ---
     const TRASPORTO_FISSO_MENSILE = 3.00;   // quota fissa trasporto, €/mese (dentro "Energia: Quota Fissa")
-    const TARIFFA_TRASPORTO_KW = 3.00;      // quota potenza -> Trasporto, €/kW/mese
-    const TRASPORTO_KWH = 0.085;            // trasporto variabile -> kWh, €/kWh
-    const ONERI_KWH = 0.063;                // oneri di sistema -> kWh, €/kWh
-    const ACCISA_KWH = 0.030;               // accisa erariale -> kWh, €/kWh
+    const TARIFFA_TRASPORTO_KW = 4.00;      // quota potenza -> Trasporto BT, €/kW/mese
+    const TRASPORTO_KWH = 0.010;            // trasporto variabile -> kWh, €/kWh
+    const ONERI_KWH = 0.020;                // oneri di sistema -> kWh, €/kWh
+    const ACCISA_KWH = 0.0125;              // accisa erariale (scaglione business) -> kWh, €/kWh
     const CAPACITA_KW = 1.00;               // corrispettivo di capacità -> Potenza incide su Energia, €/kW/mese
     const ACCISA_POTENZA_KW = 0.50;         // quota accisa legata alla Potenza, €/kW/mese
-    const IVA_RATE = 0.10;                  // IVA sul subtotale (accise incluse)
+    const IVA_RATE_DOMESTICO = 0.10;        // IVA agevolata uso domestico
+    const IVA_RATE_BUSINESS = 0.22;         // IVA ordinaria per usi non domestici (PMI, attività)
 
     // --- Fascia di leggibilità per il gruppo "Energia" nel grafico a torta ---
     const ENERGY_SHARE_MIN = 0.40;
     const ENERGY_SHARE_MAX = 0.65;
 
     // --- Geometria: raggio proporzionale all'AREA, quindi al costo totale ---
-    // area = pi * r^2  =>  r = R_CAL * sqrt(totale / totaleCAL)
-    // Con questa formula raddoppiare il costo raddoppia l'area del cerchio.
-    const R_CAL = 150;   // raggio (px) assegnato allo scenario di calibrazione (il default)
+    const R_CAL = 150;
     const R_MIN_ABS = 55;
     const R_MAX_ABS = 270;
 
@@ -392,24 +613,24 @@
         return '€ ' + v.toFixed(2).replace('.', ',');
     }
 
-    // Struttura a "scontrino dell'energia": fissa + potenza + variabili (energia+trasporto+oneri) + imposte
-    // Dipendenze verificate:
-    //  - Quota Fissa Mensile e PUN incidono SOLO sullo spicchio Energia
-    //  - kWh (consumo) incide su Energia, Accise e Trasporto
-    //  - Potenza (kW) incide su Energia (corrispettivo di capacità), Accise e Trasporto
-    function calcolaScontrino(consumo, spread, pun, potenza, quotaFissaMensile) {
-        const e_fissa = quotaFissaMensile + TRASPORTO_FISSO_MENSILE;              // 1. base fissa (commerc. + trasporto) -> Energia
-        const e_pun = consumo * pun + potenza * CAPACITA_KW;                       // 2. Energia - PUN + capacità (kWh, kW)
-        const e_spread = consumo * spread;                                         // 3. Energia - spread (solo kWh)
+    function getIvaRate() {
+        return document.getElementById('uso-domestico').checked ? IVA_RATE_DOMESTICO : IVA_RATE_BUSINESS;
+    }
 
-        const quotaPotenza = potenza * TARIFFA_TRASPORTO_KW;                       // Trasporto - quota potenza (kW)
-        const trasportoVar = consumo * TRASPORTO_KWH;                              // Trasporto - variabile (kWh)
+    // Struttura a "scontrino dell'energia": fissa + potenza + variabili (energia+trasporto+oneri) + imposte
+    function calcolaScontrino(consumo, spread, pun, potenza, quotaFissaMensile, ivaRate) {
+        const e_fissa = quotaFissaMensile + TRASPORTO_FISSO_MENSILE;
+        const e_pun = consumo * pun + potenza * CAPACITA_KW;
+        const e_spread = consumo * spread;
+
+        const quotaPotenza = potenza * TARIFFA_TRASPORTO_KW;
+        const trasportoVar = consumo * TRASPORTO_KWH;
         const trasportoTotale = quotaPotenza + trasportoVar;
 
-        const oneriVar = consumo * ONERI_KWH + consumo * ACCISA_KWH + potenza * ACCISA_POTENZA_KW; // Oneri + Accise (kWh e kW)
+        const oneriVar = consumo * ONERI_KWH + consumo * ACCISA_KWH + potenza * ACCISA_POTENZA_KW;
 
         const subtotale = e_fissa + e_pun + e_spread + trasportoTotale + oneriVar;
-        const iva = subtotale * IVA_RATE;                                          // 4. imposte e IVA al 10%
+        const iva = subtotale * ivaRate;
 
         return {
             voci: [e_fissa, e_pun, e_spread, trasportoTotale, oneriVar, iva],
@@ -417,18 +638,19 @@
         };
     }
 
+    function calcolaTotale(consumo, spread, pun, potenza, quotaFissaMensile, ivaRate) {
+        return calcolaScontrino(consumo, spread, pun, potenza, quotaFissaMensile, ivaRate).totale;
+    }
+
     // Il totale di calibrazione è lo scenario di default: gli è assegnato il raggio R_CAL.
-    const CALIBRAZIONE = calcolaScontrino(DEFAULT_CONSO, DEFAULT_SPREAD, DEFAULT_PUN, DEFAULT_POTENZA, DEFAULT_QUOTA_FISSA);
-    const TOTALE_CAL = CALIBRAZIONE.totale;
+    let CALIBRAZIONE = calcolaScontrino(DEFAULT_CONSO, DEFAULT_SPREAD, DEFAULT_PUN, DEFAULT_POTENZA, DEFAULT_QUOTA_FISSA, IVA_RATE_BUSINESS);
+    let TOTALE_CAL = CALIBRAZIONE.totale;
 
     function calcolaRaggioAreaProporzionale(totale) {
         const r = R_CAL * Math.sqrt(Math.max(0, totale) / TOTALE_CAL);
         return Math.min(R_MAX_ABS, Math.max(R_MIN_ABS, r));
     }
 
-    // Comprime la quota "Energia" (fissa+PUN+spread) in una fascia leggibile 40-65%
-    // della torta, ridistribuendo il resto proporzionalmente. Serve SOLO per gli
-    // angoli delle fette: gli importi in € restano quelli reali (voci originali).
     function normalizzaVociPerVisualizzazione(voci) {
         const energyRaw = voci[0] + voci[1] + voci[2];
         const restRaw = voci[3] + voci[4] + voci[5];
@@ -480,7 +702,6 @@
         });
     }
 
-    // Torta di default: solo contorno tratteggiato e trasparente, sempre visibile sopra i colori
     function drawPieGhostOutline(centerX, centerY, vociVisual, totale, raggio) {
         ctx.save();
         ctx.setLineDash([6, 5]);
@@ -506,13 +727,14 @@
         ctx.restore();
     }
 
-    function aggiornaLegenda(voci, totale) {
+    function aggiornaLegenda(voci, totale, ivaRate) {
         document.getElementById('lv-fissa').textContent = formattaEuro(voci[0]);
         document.getElementById('lv-pun').textContent = formattaEuro(voci[1]);
         document.getElementById('lv-spread').textContent = formattaEuro(voci[2]);
         document.getElementById('lv-trasporto').textContent = formattaEuro(voci[3]);
         document.getElementById('lv-oneri').textContent = formattaEuro(voci[4]);
         document.getElementById('lv-iva').textContent = formattaEuro(voci[5]);
+        document.getElementById('lv-iva-label').textContent = 'IVA (' + Math.round(ivaRate * 100) + '% sul subtotale)';
 
         document.getElementById('val-totale').textContent = formattaEuro(totale);
 
@@ -522,12 +744,53 @@
             segno + delta.toFixed(1) + '% rispetto allo scenario base (' + formattaEuro(TOTALE_CAL) + ')';
     }
 
+    // Escursione di costo ottenibile muovendo una sola leva sull'intero range,
+    // a parità delle altre condizioni correnti. Usata per il pannello "cosa incide davvero".
+    function calcolaImpatti(consumo, spread, pun, potenza, quotaFissaMensile, ivaRate) {
+        const totaleTariffaMin = calcolaTotale(consumo, RANGE_TARIFFA.min, pun, potenza, quotaFissaMensile, ivaRate);
+        const totaleTariffaMax = calcolaTotale(consumo, RANGE_TARIFFA.max, pun, potenza, quotaFissaMensile, ivaRate);
+        const impattoTariffa = Math.abs(totaleTariffaMax - totaleTariffaMin);
+
+        const totaleConsumoMin = calcolaTotale(RANGE_CONSUMO.min, spread, pun, potenza, quotaFissaMensile, ivaRate);
+        const totaleConsumoMax = calcolaTotale(RANGE_CONSUMO.max, spread, pun, potenza, quotaFissaMensile, ivaRate);
+        const impattoConsumo = Math.abs(totaleConsumoMax - totaleConsumoMin);
+
+        const totalePotenzaMin = calcolaTotale(consumo, spread, pun, RANGE_POTENZA.min, quotaFissaMensile, ivaRate);
+        const totalePotenzaMax = calcolaTotale(consumo, spread, pun, RANGE_POTENZA.max, quotaFissaMensile, ivaRate);
+        const impattoPotenza = Math.abs(totalePotenzaMax - totalePotenzaMin);
+
+        return { tariffa: impattoTariffa, consumo: impattoConsumo, potenza: impattoPotenza };
+    }
+
+    function aggiornaPannelloImpatti(impatti) {
+        const massimo = Math.max(impatti.tariffa, impatti.consumo, impatti.potenza, 1);
+
+        document.getElementById('imp-tariffa-val').textContent = formattaEuro(impatti.tariffa);
+        document.getElementById('imp-tariffa-bar').style.width = (impatti.tariffa / massimo * 100) + '%';
+
+        document.getElementById('imp-consumo-val').textContent = formattaEuro(impatti.consumo);
+        document.getElementById('imp-consumo-bar').style.width = (impatti.consumo / massimo * 100) + '%';
+
+        document.getElementById('imp-potenza-val').textContent = formattaEuro(impatti.potenza);
+        document.getElementById('imp-potenza-bar').style.width = (impatti.potenza / massimo * 100) + '%';
+
+        const legaConsumoPotenza = impatti.consumo + impatti.potenza;
+        const conclusione = document.getElementById('impatto-conclusione');
+        if (legaConsumoPotenza > impatti.tariffa) {
+            const volte = (legaConsumoPotenza / Math.max(impatti.tariffa, 1)).toFixed(1);
+            conclusione.textContent = 'In questo scenario, la gestione di consumi e potenza impegnata pesa circa ' + volte + ' volte più della negoziazione tariffaria: il margine di manovra più ampio non è sul prezzo, ma su come e quanto si consuma.';
+        } else {
+            conclusione.textContent = 'In questo scenario la leva tariffaria pesa quanto o più delle leve di consumo/potenza: verifica i parametri, questo è un caso limite raro nella pratica.';
+        }
+    }
+
     function disegnaGrafico() {
         const consumo = parseFloat(document.getElementById('input-consumo').value);
         const spread = parseFloat(document.getElementById('input-tariffa').value);
         const pun = parseLocaleFloat(document.getElementById('param-pun').value);
         const potenza = parseLocaleFloat(document.getElementById('param-potenza').value);
         const quotaFissaMensile = parseLocaleFloat(document.getElementById('param-quotafissa').value);
+        const ivaRate = getIvaRate();
 
         document.getElementById('val-consumo').textContent = consumo + ' kWh';
         document.getElementById('val-tariffa').textContent = spread.toFixed(3) + ' €/kWh';
@@ -537,24 +800,22 @@
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 1. Torta corrente: raggio proporzionale all'AREA = al costo reale (non normalizzato)
-        const risultatoCorrente = calcolaScontrino(consumo, spread, pun, potenza, quotaFissaMensile);
+        const risultatoCorrente = calcolaScontrino(consumo, spread, pun, potenza, quotaFissaMensile, ivaRate);
         const vociVisualCorrente = normalizzaVociPerVisualizzazione(risultatoCorrente.voci);
         const raggioCorrente = calcolaRaggioAreaProporzionale(risultatoCorrente.totale);
         drawPieFilled(centerX, centerY, vociVisualCorrente, risultatoCorrente.totale, raggioCorrente);
 
-        // 2. Torta di default: stesso principio, raggio = R_CAL (scenario di calibrazione)
         const vociVisualDefault = normalizzaVociPerVisualizzazione(CALIBRAZIONE.voci);
-        const raggioDefault = calcolaRaggioAreaProporzionale(TOTALE_CAL); // = R_CAL
+        const raggioDefault = calcolaRaggioAreaProporzionale(TOTALE_CAL);
         drawPieGhostOutline(centerX, centerY, vociVisualDefault, TOTALE_CAL, raggioDefault);
 
-        // Testo e importi FUORI dal canvas (riquadro ad alto contrasto + legenda)
-        aggiornaLegenda(risultatoCorrente.voci, risultatoCorrente.totale);
+        aggiornaLegenda(risultatoCorrente.voci, risultatoCorrente.totale, ivaRate);
+
+        const impatti = calcolaImpatti(consumo, spread, pun, potenza, quotaFissaMensile, ivaRate);
+        aggiornaPannelloImpatti(impatti);
     }
 
     const tuttiGliInput = [
-        'input-consumo',
-        'input-tariffa',
         'param-pun',
         'param-potenza',
         'param-quotafissa'
@@ -562,6 +823,51 @@
 
     tuttiGliInput.forEach(id => {
         document.getElementById(id).addEventListener('input', disegnaGrafico);
+    });
+
+    // Sincronizzazione cursore <-> valore esatto per Consumo
+    const inputConsumo = document.getElementById('input-consumo');
+    const inputConsumoEsatto = document.getElementById('input-consumo-esatto');
+    inputConsumo.addEventListener('input', () => {
+        inputConsumoEsatto.value = inputConsumo.value;
+        disegnaGrafico();
+    });
+    inputConsumoEsatto.addEventListener('input', () => {
+        let v = parseLocaleFloat(inputConsumoEsatto.value);
+        v = Math.min(RANGE_CONSUMO.max, Math.max(RANGE_CONSUMO.min, v));
+        inputConsumo.value = v;
+        disegnaGrafico();
+    });
+
+    // Sincronizzazione cursore <-> valore esatto per Tariffa/Spread
+    const inputTariffa = document.getElementById('input-tariffa');
+    const inputTariffaEsatto = document.getElementById('input-tariffa-esatto');
+    inputTariffa.addEventListener('input', () => {
+        inputTariffaEsatto.value = inputTariffa.value;
+        disegnaGrafico();
+    });
+    inputTariffaEsatto.addEventListener('input', () => {
+        let v = parseLocaleFloat(inputTariffaEsatto.value);
+        v = Math.min(RANGE_TARIFFA.max, Math.max(RANGE_TARIFFA.min, v));
+        inputTariffa.value = v;
+        disegnaGrafico();
+    });
+
+    document.getElementById('uso-domestico').addEventListener('change', disegnaGrafico);
+    document.getElementById('uso-business').addEventListener('change', disegnaGrafico);
+
+    // I valori esatti correnti diventano lo scenario base (torta tratteggiata)
+    document.getElementById('btn-imposta-base').addEventListener('click', () => {
+        const consumo = parseFloat(inputConsumo.value);
+        const spread = parseFloat(inputTariffa.value);
+        const pun = parseLocaleFloat(document.getElementById('param-pun').value);
+        const potenza = parseLocaleFloat(document.getElementById('param-potenza').value);
+        const quotaFissaMensile = parseLocaleFloat(document.getElementById('param-quotafissa').value);
+        const ivaRate = getIvaRate();
+
+        CALIBRAZIONE = calcolaScontrino(consumo, spread, pun, potenza, quotaFissaMensile, ivaRate);
+        TOTALE_CAL = CALIBRAZIONE.totale;
+        disegnaGrafico();
     });
 
     disegnaGrafico();
